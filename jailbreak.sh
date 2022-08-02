@@ -222,6 +222,13 @@ GetDeviceValues() {
 }
 
 EnterPwnDFU() {
+    if [[ $platform == "win" ]]; then
+        Echo "* Make sure that your device is already in pwnDFU mode."
+        Echo "* If your device is not in pwnDFU mode, the install will not work!"
+        Input "Press Enter/Return to continue (or press Ctrl+C to cancel)"
+        read -s
+        return
+    fi
     Log "Entering pwnDFU mode with: $pwnDFUTool"
     $pwnDFUTool -p
     pwnDFUDevice=$?
