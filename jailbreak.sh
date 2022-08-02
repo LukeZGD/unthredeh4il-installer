@@ -167,7 +167,6 @@ FindDevice() {
     local USB
     local Timeout=5
 
-
     Log "Finding device in $1 mode, please wait..."
     if [[ $1 == "Restore" ]]; then
         Timeout=30
@@ -239,7 +238,7 @@ EnterPwnDFU() {
 }
 
 Main() {
-    local Selection=("Jailbreak Device" "(Re-)Install Dependencies" "(Any other key to exit)")
+    local Selection=("Jailbreak Device" "Install Untether Package" "(Re-)Install Dependencies" "(Any other key to exit)")
 
     clear
     Echo "*** unthredeh4il-installer ***"
@@ -257,11 +256,6 @@ Main() {
 
     if [[ -d .git ]]; then
         Echo "Version: $(git rev-parse HEAD)"
-    elif [[ -e resources/git_hash ]]; then
-        Echo "Version: $(cat resources/git_hash)"
-    else
-        Echo "Version: Unknown"
-        Echo "* I recommend downloading from the GitHub releases page"
     fi
 
     SetToolPaths
@@ -272,12 +266,6 @@ Main() {
     chmod +x ./resources/bin/*
     if [[ $? != 0 ]]; then
         Error "A problem with file permissions has been detected, cannot proceed."
-    fi
-
-    Log "Checking Internet connection..."
-    $ping 8.8.8.8 >/dev/null
-    if [[ $? != 0 ]]; then
-        Error "Please check your Internet connection before proceeding."
     fi
 
     if [[ $platform == "macos" && $(uname -m) != "x86_64" ]]; then
@@ -325,7 +313,7 @@ Jailbreak() {
     sleep 2
 
     Log "Running commands..."
-    Echo "Please enter the root password \"alpine\" when prompted"
+    Echo "* Please enter the root password \"alpine\" when prompted"
     $SSH -p 2222 root@127.0.0.1 "/bin/install.sh"
     if [[ $? == 1 ]]; then
         Error "Cannot connect to device via SSH."
@@ -335,7 +323,8 @@ Jailbreak() {
 }
 
 Package() {
-    Echo "a"
+    Echo "* If you are already jailbroken using redsn0w, no need to use this script."
+    Echo "* Just get the untether package .deb from the resources folder and install that to your device"
     ExitWin 0
 }
 
@@ -358,7 +347,7 @@ RamdiskCreate() {
         hdiutil resize -size 50MB Ramdisk.raw
         mkdir ramdisk_mountpoint
         hdiutil attach -mountpoint ramdisk_mountpoint/ Ramdisk.raw
-        tar -xvf ../../resources/ssh.tar -C ramdisk_mountpoint/
+        tar -xvf ../resources/ssh.tar -C ramdisk_mountpoint/
         hdiutil detach ramdisk_mountpoint
     else
         $hfsplus Ramdisk.raw grow 50000000
