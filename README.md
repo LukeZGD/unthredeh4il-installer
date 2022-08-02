@@ -6,6 +6,10 @@
 - If you are already jailbroken using redsn0w, no need to use this script. Just get the untether package .deb from the `resources` folder and install that
 - No warranty is provided
 
+## Supported devices and versions
+- iPad1,1, iPhone2,1, iPhone3,1, iPhone3,3, iPod3,1, iPod4,1
+- iOS 4.2.6 to 5.1.1
+
 ## Tools and other stuff used
 - Ramdisk creation and loading is based on Ralph0045's [SSH ramdisk maker and loader](https://github.com/Ralph0045/SSH-Ramdisk-Maker-and-Loader)
 - [iPwnder32](https://github.com/dora2-iOS/iPwnder32) - dora2ios

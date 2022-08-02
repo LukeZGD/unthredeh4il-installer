@@ -65,13 +65,10 @@ SetToolPaths() {
     hfsplus="../resources/bin/hfsplus_$platform"
     iBoot32Patcher="../resources/bin/iBoot32Patcher_$platform"
     pwnDFUTool="./resources/bin/pwnedDFU_$platform"
-    ideviceenterrecovery="$MPath/ideviceenterrecovery"
     ideviceinfo="$MPath/ideviceinfo"
     iproxy="$MPath/iproxy"
     irecovery="$MPath/irecovery"
-    SSH="-F ./resources/ssh_config"
-    SCP="$(which scp) $SSH"
-    SSH="$(which ssh) $SSH"
+    SSH="$(which ssh) -F ./resources/ssh_config"
 }
 
 SaveFile() {
@@ -275,6 +272,12 @@ Main() {
         Error "A problem with file permissions has been detected, cannot proceed."
     fi
 
+    Log "Checking Internet connection..."
+    $ping 8.8.8.8 >/dev/null
+    if [[ $? != 0 ]]; then
+        Log "WARNING - Please check your Internet connection before proceeding."
+    fi
+
     if [[ $platform == "macos" && $(uname -m) != "x86_64" ]]; then
         Log "Apple Silicon Mac detected. Support may be limited, proceed at your own risk."
     elif [[ $(uname -m) != "x86_64" ]]; then
@@ -387,12 +390,12 @@ RamdiskBoot() {
     FindDevice "Recovery"
 
     Log "Booting..."
-    irecovery -f Ramdisk.dmg
-    irecovery -c ramdisk
-    irecovery -f DeviceTree.dec
-    irecovery -c devicetree
-    irecovery -f Kernelcache.dec
-    irecovery -c bootx
+    $irecovery -f Ramdisk.dmg
+    $irecovery -c ramdisk
+    $irecovery -f DeviceTree.dec
+    $irecovery -c devicetree
+    $irecovery -f Kernelcache.dec
+    $irecovery -c bootx
     FindDevice "Restore"
     cd ../..
 }
