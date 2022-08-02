@@ -295,15 +295,15 @@ Main() {
     Input "Select an option:"
     select opt in "${Selection[@]}"; do
     case $opt in
-        "Jailbreak Device" ) Mode="Jailbreak"; break;;
+        "Jailbreak Device" ) Mode="Jailbreak"; EnterPwnDFU; break;;
         "Install Untether Package" ) Mode="Package"; break;;
         "(Re-)Install Dependencies" ) InstallDepends;;
         * ) exit 0;;
     esac
     done
 
-    EnterPwnDFU
     $Mode
+    ExitWin 0
 }
 
 Jailbreak() {
@@ -332,7 +332,6 @@ Jailbreak() {
 Package() {
     Echo "* If you are already jailbroken using redsn0w, no need to use this script."
     Echo "* Just get the untether package .deb from the resources folder and install that to your device"
-    ExitWin 0
 }
 
 RamdiskCreate() {
