@@ -342,8 +342,8 @@ RamdiskCreate() {
     mkdir -p saved/$ProductType
     cd tmp
     for i in {0..5}; do
-        if [[ -e ../saved/${Component[$i]} ]]; then
-            cp ../saved/${Component[$i]} .
+        if [[ -e ../saved/$ProductType/${Component[$i]} ]]; then
+            cp ../saved/$ProductType/${Component[$i]} .
         else
             $partialzip $IPSW_URL ${File[$i]} ${Component[$i]}
             cp ${Component[$i]} ../saved/$ProductType
