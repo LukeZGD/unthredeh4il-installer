@@ -352,16 +352,8 @@ RamdiskCreate() {
         rm ${Component[$i]}
     done
     $xpwntool Ramdisk.dec Ramdisk.raw
-    if [[ $platform == "macos" ]]; then
-        hdiutil resize -size 50MB Ramdisk.raw
-        mkdir ramdisk_mountpoint
-        hdiutil attach -mountpoint ramdisk_mountpoint/ Ramdisk.raw
-        tar -xvf ../resources/ssh.tar -C ramdisk_mountpoint/
-        hdiutil detach ramdisk_mountpoint
-    else
-        $hfsplus Ramdisk.raw grow 50000000
-        $hfsplus Ramdisk.raw untar ../resources/ssh.tar
-    fi
+    $hfsplus Ramdisk.raw grow 50000000
+    $hfsplus Ramdisk.raw untar ../resources/ssh.tar
     $xpwntool Ramdisk.raw Ramdisk.dmg -t Ramdisk.dec
 
     $xpwntool iBSS.dec iBSS.raw
