@@ -162,7 +162,7 @@ FindDevice() {
     local DeviceIn
     local i=0
     local USB
-    local Timeout=5
+    local Timeout=10
 
     Log "Finding device in $1 mode, please wait..."
     if [[ $1 == "Restore" ]]; then
