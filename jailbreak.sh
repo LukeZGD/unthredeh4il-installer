@@ -38,7 +38,7 @@ Log() {
 }
 
 ExitWin() {
-    if [[ $platform == "win" ]]; then
+    if [[ $platform == "windows" ]]; then
         echo
         Input "Press Enter/Return to exit."
         read -s
@@ -56,19 +56,33 @@ SetToolPaths() {
         platform="macos"
         sha1sum="$(which shasum)"
     elif [[ $OSTYPE == "msys" ]]; then
-        platform="win"
+        platform="windows"
         ping="ping -n 1"
     fi
-    MPath="./resources/libimobiledevice_$platform"
-    partialzip="../resources/bin/partialzip_$platform"
-    xpwntool="../resources/bin/xpwntool_$platform"
-    hfsplus="../resources/bin/hfsplus_$platform"
-    iBoot32Patcher="../resources/bin/iBoot32Patcher_$platform"
-    pwnDFUTool="./resources/bin/pwnedDFU_$platform"
-    ideviceinfo="$MPath/ideviceinfo"
-    iproxy="$MPath/iproxy"
-    irecovery="$MPath/irecovery"
+    dir="./bin/$platform"
+    if [[ $platform == "linux" ]]; then
+        if [[ $(uname -a) == "a"* && $(getconf LONG_BIT) == 64 ]]; then
+            dir+="/arm64"
+        elif [[ $(uname -a) == "a"* ]]; then
+            dir+="/arm"
+        else
+            dir+="/x86_64"
+        fi
+    fi
+    partialzip="../$dir/partialzip"
+    xpwntool="../$dir/xpwntool"
+    hfsplus="../$dir/hfsplus"
+    iBoot32Patcher="../$dir/iBoot32Patcher"
+    pwnDFUTool="$dir/ipwnder"
+    ideviceinfo="$dir/ideviceinfo"
+    iproxy="$dir/iproxy"
+    irecovery="$dir/irecovery"
     SSH="$(which ssh) -F ./resources/ssh_config"
+    if [[ $platform == "macos" ]]; then
+        ideviceinfo="$(which ideviceinfo)"
+        iproxy="$(which iproxy)"
+        irecovery="$(which irecovery)"
+    fi
 }
 
 SaveFile() {
@@ -82,8 +96,6 @@ SaveFile() {
 }
 
 InstallDepends() {
-    local libimobiledevice
-
     mkdir tmp 2>/dev/null
     cd tmp
 
@@ -119,24 +131,20 @@ InstallDepends() {
         sudo dnf install -y ca-certificates libimobiledevice systemd udev usbmuxd
         sudo ln -sf /etc/pki/tls/certs/ca-bundle.crt /etc/pki/tls/certs/ca-certificates.crt
 
-    elif [[ $ID == "opensuse-tumbleweed" || $PRETTY_NAME == *"Leap 15.4" ]]; then
-        [[ $ID == "opensuse-leap" ]] && ln -sf /lib64/libreadline.so.7 ../resources/lib/libreadline.so.8
+    elif [[ $ID == "opensuse-tumbleweed" ]]; then
         sudo zypper -n in curl libimobiledevice-1_0-6 usbmuxd
 
     elif [[ $platform == "macos" ]]; then
         xcode-select --install
-        libimobiledevice=("https://github.com/LukeZGD/iOS-OTA-Downgrader-Keys/releases/download/tools/libimobiledevice_macos.zip" "66a49e4f69757a3d9dc51109a8e4651020bfacb8")
 
-    elif [[ $platform == "win" ]]; then
+    elif [[ $platform == "windows" ]]; then
         pacman -Sy --noconfirm --needed ca-certificates curl openssh unzip zip
-        libimobiledevice=("https://github.com/LukeZGD/iOS-OTA-Downgrader-Keys/releases/download/tools/libimobiledevice_win.zip" "75ae3af3347b89107f0f6b7e41fde42e6ccdd404")
 
     else
         Error "Distro not detected/supported by the install script." "See the repo README for supported OS versions/distros"
     fi
 
     if [[ $platform == "linux" ]]; then
-        libimobiledevice=("https://github.com/LukeZGD/iOS-OTA-Downgrader-Keys/releases/download/tools/libimobiledevice_linux.zip" "fc5e714adf6fa72328d3e1ddea4e633f370559a4")
         # from linux_fix script by Cryptiiiic
         sudo systemctl enable --now systemd-udevd usbmuxd 2>/dev/null
         echo "QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0idXNiIiwgQVRUUntpZFZlbmRvcn09PSIwNWFjIiwgQVRUUntpZFByb2R1Y3R9PT0iMTIyWzI3XXwxMjhbMC0zXSIsIE9XTkVSPSJyb290IiwgR1JPVVA9InVzYm11eGQiLCBNT0RFPSIwNjYwIiwgVEFHKz0idWFjY2VzcyIKCkFDVElPTj09ImFkZCIsIFNVQlNZU1RFTT09InVzYiIsIEFUVFJ7aWRWZW5kb3J9PT0iMDVhYyIsIEFUVFJ7aWRQcm9kdWN0fT09IjEzMzgiLCBPV05FUj0icm9vdCIsIEdST1VQPSJ1c2JtdXhkIiwgTU9ERT0iMDY2MCIsIFRBRys9InVhY2Nlc3MiCgoK" | base64 -d | sudo tee /etc/udev/rules.d/39-libirecovery.rules >/dev/null 2>/dev/null
@@ -145,12 +153,7 @@ InstallDepends() {
         sudo udevadm control --reload-rules
     fi
 
-    SaveFile ${libimobiledevice[0]} libimobiledevice.zip ${libimobiledevice[1]}
-    mkdir ../resources/libimobiledevice_$platform
-    Log "Extracting libimobiledevice..."
-    unzip -q libimobiledevice.zip -d ../resources/libimobiledevice_$platform
-    chmod +x ../resources/libimobiledevice_$platform/*
-    touch ../resources/first_run
+    touch ../resources/firstrun
 
     cd ..
     Log "Install script done! Please run the script again to proceed"
@@ -219,7 +222,7 @@ GetDeviceValues() {
 }
 
 EnterPwnDFU() {
-    if [[ $platform == "win" ]]; then
+    if [[ $platform == "windows" ]]; then
         Echo "* Make sure that your device is already in pwnDFU mode."
         Echo "* If your device is not in pwnDFU mode, the install will not work!"
         Input "Press Enter/Return to continue (or press Ctrl+C to cancel)"
@@ -284,7 +287,7 @@ Main() {
         Error "Only 64-bit (x86_64) distributions are supported."
     fi
 
-    if [[ $1 == "Install" || ! -e ./resources/first_run ]]; then
+    if [[ $1 == "Install" || ! -e ./resources/firstrun ]]; then
         Clean
         InstallDepends
     fi
