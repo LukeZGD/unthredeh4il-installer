@@ -15,7 +15,10 @@ fi
 
 Clean() {
     rm -rf tmp/
-    kill $iproxyPID 2>/dev/null
+    kill $iproxyPID $sudoloop_pid $usbmuxd_pid 2>/dev/null
+    if [[ -n $usbmuxd_pid ]]; then
+        sudo systemctl restart usbmuxd
+    fi
 }
 
 Echo() {
@@ -82,6 +85,17 @@ SetToolPaths() {
         ideviceinfo="$(which ideviceinfo)"
         iproxy="$(which iproxy)"
         irecovery="$(which irecovery)"
+    elif [[ $platform == "linux" ]]; then
+        Echo "* Enter your user password when prompted"
+        sudo -v
+        (while true; do sudo -v; sleep 60; done) &
+        sudoloop_pid=$!
+        irecovery="sudo $irecovery"
+        pwnDFUTool="sudo $pwnDFUTool"
+        sudo chmod +x $dir/*
+        sudo systemctl stop usbmuxd
+        sudo usbmuxd -pz
+        usbmuxd_pid=$!
     fi
 }
 
@@ -270,15 +284,13 @@ Main() {
         Error "Platform unknown/not supported."
     fi
 
-    chmod +x ./resources/bin/*
-    if [[ $? != 0 ]]; then
-        Error "A problem with file permissions has been detected, cannot proceed."
-    fi
-
     Log "Checking Internet connection..."
-    $ping 8.8.8.8 >/dev/null
+    $ping google.com >/dev/null
     if [[ $? != 0 ]]; then
-        Log "WARNING - Please check your Internet connection before proceeding."
+        $ping 208.67.222.222 >/dev/null
+        if [[ $? != 0 ]]; then
+            Log "WARNING - Please check your Internet connection before proceeding."
+        fi
     fi
 
     if [[ $platform == "macos" && $(uname -m) != "x86_64" ]]; then
@@ -373,26 +385,21 @@ RamdiskCreate() {
 }
 
 RamdiskBoot() {
-    local irecovery="../../$irecovery"
-    local ideviceinfo="../../$ideviceinfo"
-    cd resources/SSH-Ramdisk_$ProductType
-
     Log "Sending iBSS"
-    $irecovery -f iBSS
+    $irecovery -f resources/SSH-Ramdisk_$ProductType/iBSS
     sleep 2
     Log "Sending iBEC"
-    $irecovery -f iBEC
+    $irecovery -f resources/SSH-Ramdisk_$ProductType/iBEC
     FindDevice "Recovery"
 
     Log "Booting..."
-    $irecovery -f Ramdisk.dmg
+    $irecovery -f resources/SSH-Ramdisk_$ProductType/Ramdisk.dmg
     $irecovery -c ramdisk
-    $irecovery -f DeviceTree.dec
+    $irecovery -f resources/SSH-Ramdisk_$ProductType/DeviceTree.dec
     $irecovery -c devicetree
-    $irecovery -f Kernelcache.dec
+    $irecovery -f resources/SSH-Ramdisk_$ProductType/Kernelcache.dec
     $irecovery -c bootx
-    FindDevice "Restore"
-    cd ../..
+    sleep 30
 }
 
 Main
